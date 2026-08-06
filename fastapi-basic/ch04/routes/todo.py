@@ -43,46 +43,56 @@ async def getAll(db:Session = Depends(get_db)) -> dict:
     return {"todos" : todos}
 
 # U
-@router.put("/todo/{id}")
-async def update_todo(todo_data : TodoItem, id:int = Path(...)) -> dict:
-    for todo in todo_list:
-        if todo.id == id:
-            todo.item = todo_data.item
-            return {
-                "message" : "업데이트 성공"
-            }
+@router.put("/todo/{id}", response_model = Todo)
+async def update_todo(todo_data : TodoItem, id:int = Path(...), db: Session = Depends(get_db)) -> dict:
+    todo = db.get(TodoModel, id)        
+
     # 검색되는 id가 없을 경우 404 err 처리
-    raise HTTPException(
-        status_code=status.HTTP_404_NOT_FOUND,
-        detail="Todo with supplied ID doesn't exist",
-    )
-    # return { "message" : "id를 확인해주세요" }
+    if todo is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Todo with supplied ID doesn't exist",
+        )
+
+    # 내용(item) 교체
+    todo.item = todo_data.item
+    db.commit()
+    db.refresh(todo)
+
+    return todo
 
 # D
 # delete all
 @router.delete("/todo")
-async def deleteAll() -> dict:
-    if len(todo_list) > 0 :
-        todo_list.clear()
+async def deleteAll(db : Session = Depends(get_db)) -> dict:
+    result = db.execute(
+        delete(TodoModel)
+    )
+    db.commit()
+
+    if result.rowcount == 0:
         return {
-            "message" : "목록 초기화 완료"
+            "message" : "todos 테이블의 데이터가 존재하지 않음"
         }
-    return { "message" : "삭제할 항목이 없습니다." }
+    return {
+        "message" : "전체 데이터 삭제 완료!"
+    }
 
 
 # id 입력 받아 해당 todo 삭제
 @router.delete("/todo/{id}")
-async def delete_todo(id : int = Path(...)) -> dict:
-    for idx in range(len(todo_list)):
-        todo = todo_list[idx]
-        if todo.id == id:
-            todo_list.pop(idx)
-            return {
-                "message" : "삭제가 완료됐습니다."   
-            }
+async def delete_todo(id : int = Path(...), db : Session = Depends(get_db)) -> dict:
+    todo = db.get(TodoModel, id)
+    if todo is None :
+        # 검색되는 id가 없을 경우 404 err 처리
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Todo with supplied ID doesn't exist",
+        )
 
-    # 검색되는 id가 없을 경우 404 err 처리
-    raise HTTPException(
-        status_code=status.HTTP_404_NOT_FOUND,
-        detail="Todo with supplied ID doesn't exist",
-    )
+    db.delete(todo)
+    db.commit()
+
+    return {
+        "message" : "todo 삭제 완료!"
+    }

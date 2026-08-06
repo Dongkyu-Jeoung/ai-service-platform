@@ -1,8 +1,9 @@
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from routes.todo import router as todo_router
+from routes.book import router as book_router
 from database import engine, Base
-# from ch03.routes.book import router as book_router
 
 # 1. lifespan 비동기 컨텍스트 관리자 정의
 @asynccontextmanager
@@ -15,13 +16,18 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(lifespan=lifespan)
 
+# 리액트 프론트엔드 접속 허용 : CORS
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins = [
+        "http://localhost:5173",
+        "http://127.0.0.1:5173",
+        "http://172.28.144.1:5173"
+    ],
+    allow_credentials= True,
+    allow_methods = ["*"],
+    allow_headers = ["*"]
+)
 
-@app.get("/")
-async def welcome() -> dict:
-    return {
-        "message" : "welcome ch03!!"
-    }
-
-# todo 어플리케이션 개발 - CRUD
 app.include_router(todo_router, tags=["TODO"])
-# app.include_router(book_router, tags=["BOOK"], prefix="/book")
+app.include_router(book_router, tags=["BOOK"], prefix="/book")

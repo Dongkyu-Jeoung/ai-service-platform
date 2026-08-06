@@ -1,4 +1,5 @@
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
+from typing import List
 
 class Book(BaseModel):
     id : int
@@ -19,19 +20,19 @@ class Book(BaseModel):
         }
     )
 
-# class BookInfo(BaseModel):
-#     title : str
-#     price : int
-#     isbn : int
+class BookInfo(BaseModel):
+    title : str
+    price : int
+    isbn : int
 
-#     model_config = ConfigDict(
-#         json_schema_extra={
-#             "examples" : [
-#                 {
-#                     "title" : "FastAPI",
-#                     "price" : 20000,
-#                     "isbn" : 1234
-#                 }
-#             ]
-#         }
-#     )
+    model_config = ConfigDict(
+        json_schema_extra={
+            "examples" : [
+                {
+                    "title" : "FastAPI",
+                    "price" : 20000,
+                    "isbn" : 1234
+                }
+            ]
+        }
+    )
